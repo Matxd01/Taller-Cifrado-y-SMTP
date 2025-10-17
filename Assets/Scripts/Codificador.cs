@@ -8,12 +8,12 @@ using UnityEngine.UI;
 
 public class Codificador : MonoBehaviour
 {
-    [Header("UI (arrastra desde el Canvas)")]
+    [Header("UI (drag from Canvas)")]
     public TMP_InputField inputField;
     public TMP_Text outputText;
     public Button convertirBtn;
 
-    // ===== AÉREO (NATO) =====
+    // NATO 
     private static readonly Dictionary<char, string> NATO = new Dictionary<char, string>()
     {
         ['A']="Alpha",['B']="Bravo",['C']="Charlie",['D']="Delta",['E']="Echo",
@@ -27,10 +27,9 @@ public class Codificador : MonoBehaviour
         [' ']=" "
     };
 
-    // ===== BINARIO (7 bits como en la tabla) =====
+    // 7-bit for A–Z
     private static readonly Dictionary<char, string> LATIN_TO_BIN7 = new Dictionary<char, string>()
     {
-        // A=65 (1000001) ... Z=90 (1011010) en 7 bits
         ['A']="1000001", ['B']="1000010", ['C']="1000011", ['D']="1000100",
         ['E']="1000101", ['F']="1000110", ['G']="1000111", ['H']="1001000",
         ['I']="1001001", ['J']="1001010", ['K']="1001011", ['L']="1001100",
@@ -38,16 +37,15 @@ public class Codificador : MonoBehaviour
         ['Q']="1010001", ['R']="1010010", ['S']="1010011", ['T']="1010100",
         ['U']="1010101", ['V']="1010110", ['W']="1010111", ['X']="1011000",
         ['Y']="1011001", ['Z']="1011010",
-        // Dígitos tras NATO (Zero, One...) no se usan aquí: los convierte a palabras el paso AÉREO.
     };
 
-    // ===== BINARIO → “GRIEGO” =====
+    // Binary => symbols
     private static readonly Dictionary<char, string> BIN_TO_GRE = new Dictionary<char, string>()
     {
         ['0']="α", ['1']="μ", ['/']="ω"
     };
 
-    // ===== “GRIEGO” → LATÍN (para mostrar) =====
+    // Pseudo Greek => Latin 
     private static readonly Dictionary<char, char> GRE_TO_LAT = new Dictionary<char, char>()
     {
         ['α']='A', ['μ']='M', ['ω']='W'
@@ -59,17 +57,14 @@ public class Codificador : MonoBehaviour
             convertirBtn.onClick.AddListener(OnConvertir);
     }
 
-    /// <summary>
-    /// Pipeline público para reutilizar desde otros scripts (p. ej. UIManager).
-    /// </summary>
+    /// <summary>End-to-end conversion pipeline.</summary>
     public string ConvertPipeline(string raw)
     {
-        string limpio = Normalizar(raw);                     // MAYÚSCULAS + sin tildes
-        string sNato = MapPorCaracter(limpio, NATO, " ");    // 1) AERONÁUTICO (NATO)
-        string sBin  = NatoToBinary7Compact(sNato);          // 2) NATO → BINARIO (7 bits)
-        string sGre  = MapPorCaracter(sBin, BIN_TO_GRE, ""); // 3) BINARIO → “GRIEGO”
-        string final = GriegoALatinFinal(sGre)               // 4) “GRIEGO” → LATÍN
-                        .ToUpperInvariant();
+        string limpio = Normalizar(raw);
+        string sNato = MapPorCaracter(limpio, NATO, " ");
+        string sBin  = NatoToBinary7Compact(sNato);
+        string sGre  = MapPorCaracter(sBin, BIN_TO_GRE, "");
+        string final = GriegoALatinFinal(sGre).ToUpperInvariant();
         return final;
     }
 
@@ -81,16 +76,14 @@ public class Codificador : MonoBehaviour
         if (outputText != null)
         {
             outputText.enableWordWrapping = false;
-            outputText.text = final; // solo la codificación final
+            outputText.text = final;
         }
     }
 
-    // ===== Utilidades =====
-
+    // Utils
     private static string Normalizar(string s)
     {
         if (string.IsNullOrEmpty(s)) return "";
-        // Quita tildes/diacríticos y pasa a MAYÚSCULAS
         string formD = s.ToUpperInvariant().Normalize(NormalizationForm.FormD);
         return Regex.Replace(formD, @"\p{Mn}+", "");
     }
@@ -112,10 +105,6 @@ public class Codificador : MonoBehaviour
         return sb.ToString();
     }
 
-    // Convierte cadena NATO (palabras con espacios, guiones, etc.) a binario 7 bits:
-    // - Solo letras A–Z se convierten usando la tabla (sin separadores entre bytes).
-    // - Espacio entre palabras en NATO -> '/' (separador de palabra).
-    // - Caracteres no A–Z (como '-') se ignoran.
     private static string NatoToBinary7Compact(string nato)
     {
         if (string.IsNullOrEmpty(nato)) return "";
@@ -125,7 +114,7 @@ public class Codificador : MonoBehaviour
         {
             if (ch == ' ')
             {
-                sb.Append('/'); // separador entre palabras
+                sb.Append('/');
                 continue;
             }
             if (ch >= 'A' && ch <= 'Z')
@@ -133,7 +122,6 @@ public class Codificador : MonoBehaviour
                 if (LATIN_TO_BIN7.TryGetValue(ch, out string bits))
                     sb.Append(bits);
             }
-            // ignora otros caracteres (p. ej., '-')
         }
         return sb.ToString();
     }
@@ -147,7 +135,6 @@ public class Codificador : MonoBehaviour
         {
             if (GRE_TO_LAT.TryGetValue(g, out char lat))
                 sb.Append(lat);
-            // Si aparece otro símbolo, se ignora para mantener la cadena limpia
         }
         return sb.ToString();
     }

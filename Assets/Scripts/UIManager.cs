@@ -5,39 +5,36 @@ using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
-    [Header("Refs – arrastra desde el Canvas")]
-    public TMP_InputField MessageInput;   // "MessageInput"
-    public TMP_InputField EmailInput;     // "EmailInput"
-    public TMP_Text OutputText;           // "OutputText"
-    public TMP_Text StatusText;           // "StatusText"
-    public Button ConvertButton;          // "ConvertButton"
-    public Button SendButton;             // "SendButton"
+    [Header("Refs – drag from Canvas")]
+    public TMP_InputField MessageInput;
+    public TMP_InputField EmailInput;
+    public TMP_Text OutputText;
+    public TMP_Text StatusText;
+    public Button ConvertButton;
+    public Button SendButton;
 
     [Header("Overlays")]
-    public CanvasGroup Toast;             // "Toast"
-    public TMP_Text ToastText;            // "ToastText"
-    public CanvasGroup ConfirmDialog;     // "ConfirmDialog"
-    public TMP_Text ConfirmText;          // "ConfirmText"
-    public Button ConfirmYesButton;       // "ConfirmYesButton"
-    public Button ConfirmNoButton;        // "ConfirmNoButton"
+    public CanvasGroup Toast;
+    public TMP_Text ToastText;
+    public CanvasGroup ConfirmDialog;
+    public TMP_Text ConfirmText;
+    public Button ConfirmYesButton;
+    public Button ConfirmNoButton;
 
     [Header("Backends")]
-    public Codificador codificador;       // GO "Codificador"
-    public Emailsender emailer;           // GO "SMTP"
+    public Codificador codificador;
+    public Emailsender emailer;
 
     private void Awake()
     {
-        // Wire básico
         ConvertButton.onClick.AddListener(OnConvertClicked);
         SendButton.onClick.AddListener(OnSendClicked);
 
-        // Oculta overlays al iniciar
-        HideCanvasGroup(Toast, immediate:true);
-        HideCanvasGroup(ConfirmDialog, immediate:true);
+        HideCanvasGroup(Toast, immediate: true);
+        HideCanvasGroup(ConfirmDialog, immediate: true);
         Log("Listo.");
     }
 
-    // ---- Convertir ----
     private void OnConvertClicked()
     {
         var plain = MessageInput.text?.Trim() ?? "";
@@ -47,10 +44,7 @@ public class UIManager : MonoBehaviour
             return;
         }
 
-        // --- MICRO-AJUSTE #1 requerido en Codificador (abajo):
-        //     expón un método público que retorne el cifrado final.
-        //     string ConvertPipeline(string raw)
-        string final = codificador.ConvertPipeline(plain);      // <—
+        string final = codificador.ConvertPipeline(plain);
 
         OutputText.enableWordWrapping = false;
         OutputText.text = final;
@@ -58,7 +52,6 @@ public class UIManager : MonoBehaviour
         ToastShort("Cifrado listo.");
     }
 
-    // ---- Enviar ----
     private void OnSendClicked()
     {
         var to = EmailInput.text?.Trim() ?? "";
@@ -73,7 +66,6 @@ public class UIManager : MonoBehaviour
             return;
         }
 
-        // Confirmación
         ConfirmText.text = $"Enviar mensaje cifrado a:\n<b>{to}</b>?";
         ShowCanvasGroup(ConfirmDialog);
         ConfirmYesButton.onClick.RemoveAllListeners();
@@ -92,13 +84,9 @@ public class UIManager : MonoBehaviour
         SetInteractable(false);
         Log("Enviando…");
 
-        // --- MICRO-AJUSTE #2 en Emailsender (abajo):
-        //     agrega un método TrySend(to, subject, body, out error)
-        bool ok;
-        string err;
-        ok = emailer.TrySend(to, subject, body, out err);       // <—
+        bool ok = emailer.TrySend(to, subject, body, out string err);
 
-        yield return null; // cede un frame por si hay UI que refrescar
+        yield return null;
 
         if (ok)
         {
@@ -114,7 +102,6 @@ public class UIManager : MonoBehaviour
         SetInteractable(true);
     }
 
-    // ---- Utils ----
     private void SetInteractable(bool value)
     {
         ConvertButton.interactable = value;
@@ -143,7 +130,7 @@ public class UIManager : MonoBehaviour
         HideCanvasGroup(Toast);
     }
 
-    private void ShowCanvasGroup(CanvasGroup cg, bool immediate=false)
+    private void ShowCanvasGroup(CanvasGroup cg, bool immediate = false)
     {
         if (cg == null) return;
         cg.interactable = true;
@@ -152,7 +139,7 @@ public class UIManager : MonoBehaviour
         else StartCoroutine(FadeCanvasGroup(cg, 0f, 1f, 0.15f));
     }
 
-    private void HideCanvasGroup(CanvasGroup cg, bool immediate=false)
+    private void HideCanvasGroup(CanvasGroup cg, bool immediate = false)
     {
         if (cg == null) return;
         cg.interactable = false;
